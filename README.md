@@ -26,6 +26,24 @@ phi-memory9 demo --db ./phi-memory9.sqlite3
 phi-memory9 verify --db ./phi-memory9.sqlite3
 ~~~
 
+## R0.2: evidence, contradictions and retrieval
+
+The optional `EvidenceLedger` layer adds source pointers, operator-declared claims,
+support/challenge/context links, recorded contradictions, declared independence
+groups, and a hash-checked event chain. It **does not validate the truth of claims**
+or automatically infer contradictory conclusions. R0.1 memories remain intact.
+
+```sh
+phi-memory9 evidence-demo
+phi-memory9 benchmark
+phi-memory9 verify-evidence --db ./phi-memory9.sqlite3
+```
+
+The benchmark compares an active-memory lexical baseline to ancestry-aware
+reranking on **six hand-built synthetic queries**. Neither is a vector model;
+the dataset favors historic-wording recovery and is not evidence of general
+retrieval superiority. See [R0.2 Research](docs/RESEARCH_R02.md).
+
 ## React visual lab
 
 The `web/` directory contains a **synthetic, browser-only** nine-stage visual lab. It illustrates nested blobs and operator-selected LOOP routing; it does **not** read or write the SQLite engine.
@@ -52,9 +70,9 @@ PYTHONPATH=src python examples/nested_demo.py
 - An optional source reference establishes an attribution pointer, **not** independent verification.
 - A LOOP chooses a route under explicit operator control. The default route is **hold**.
 - Repeated identical content within one blob is rejected; depth and loop limits are enforced.
-- No claims that the nine-stage metaphor improves retrieval have yet been established. Comparative benchmarks are future work.
+- No validated retrieval superiority is claimed. The R0.2 tiny synthetic comparison is exploratory only.
 
-**Status:** R0.1 research prototype. Not integrated with PhiStream, Altermath, PhiDiscovery, Sovereign Memory Lattice, or SuperPhiVessel. No agent authority, no network transport, and no automatic cross-system memory sharing.
+**Status:** R0.2 research prototype with R0.1 lifecycle core. Not integrated with PhiStream, Altermath, PhiDiscovery, Sovereign Memory Lattice, or SuperPhiVessel. No agent authority, no network transport, and no automatic cross-system memory sharing.
 
 Read [Architecture](docs/ARCHITECTURE.md) and [the Python example](examples/nested_demo.py).
 
