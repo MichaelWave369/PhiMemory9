@@ -68,10 +68,14 @@ class MemoryTests(unittest.TestCase):
     def test_loop_outward_and_lateral(self):
         nested = self.engine.create_blob("nested", self.root)
         inner = self.engine.transfer(self.first, nested)
-        outward = self.engine.loop(inner, "outward")
+        # The original text already exists in root. Reject duplicate re-entry.
+        with self.assertRaises(MemoryError9):
+            self.engine.loop(inner, "outward")
+        changed = self.engine.rebirth(inner, "A new idea from the child blob", nested)
+        outward = self.engine.loop(changed, "outward")
         self.assertEqual(outward["target_blob_id"], self.root)
-        # Target root already has identical content: duplicate transfers are refused.
-        self.assertIsNotNone(outward["child_memory_id"])
+        self.assertEqual(self.engine.lineage(outward["child_memory_id"]),
+                         [self.first, inner, changed, outward["child_memory_id"]])
 
     def test_reject_duplicate_in_lateral_target(self):
         target = self.engine.create_blob("target")
