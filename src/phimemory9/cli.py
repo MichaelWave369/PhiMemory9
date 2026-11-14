@@ -5,6 +5,7 @@ import json
 from .core import MemoryEngine
 from .evidence import EvidenceLedger
 from .retrieval import benchmark_fixture
+from .benchmark_r05 import run_heldout_r05
 from .governance import (
     apply, export_digest, load_plan, review, save_export,
 )
@@ -63,6 +64,9 @@ def main() -> None:
     export_memory.add_argument("--out", required=True)
     export_memory.add_argument("--include-content", action="store_true")
     export_memory.add_argument("--approve-sha256", default=None)
+    commands.add_parser(
+        "benchmark-r05", help="Run frozen 36-query synthetic retrieval comparison"
+    )
     args = parser.parse_args()
 
     if args.command == "seed-lab":
@@ -82,6 +86,10 @@ def main() -> None:
             pass
         finally:
             server.server_close()
+        return
+
+    if args.command == "benchmark-r05":
+        print(json.dumps(run_heldout_r05(), indent=2))
         return
 
     if args.command == "benchmark":
