@@ -13,13 +13,21 @@ function LiveMemoryPanel() {
   const [selectedId, setSelectedId] = useState("");
   const [detail, setDetail] = useState(null);
   const [error, setError] = useState("");
+  const [accessKey, setAccessKey] = useState("");
+  const [entry, setEntry] = useState("");
+  const apiFetch = useCallback((url, options = {}) => fetch(url, {
+    ...options,
+    cache: "no-store",
+    headers: { ...options.headers, Authorization: "Bearer " + accessKey },
+  }), [accessKey]);
 
   const refresh = useCallback(async () => {
-    if (!isLocal) return;
+    if (!isLocal || !accessKey) return;
     setBridge("checking");
     setError("");
     try {
-      const status = await fetch("/api/v1/status", { cache: "no-store" });
+      const status = await apiFetch("/api/v1/status");
+      if (status.status === 401) throw new Error("Access key rejected. Check the local terminal key.");
       if (!status.ok || !(status.headers.get("content-type") || "").includes("application/json")) {
         throw new Error("No local ΦMemory9 service is available.");
       }
@@ -27,7 +35,7 @@ function LiveMemoryPanel() {
       if (!state.connected || state.mode !== "read_only") {
         throw new Error("Local service did not report a read-only connection.");
       }
-      const response = await fetch("/api/v1/snapshot", { cache: "no-store" });
+      const response = await apiFetch("/api/v1/snapshot");
       if (!response.ok) throw new Error("The SQLite snapshot could not be read.");
       const payload = await response.json();
       if (payload.schema !== "phi-memory9/local-snapshot-r0.3") {
@@ -39,13 +47,15 @@ function LiveMemoryPanel() {
       setBridge("connected");
     } catch (err) {
       setBridge("disconnected");
+      setSnapshot(null);
+      setDetail(null);
       setError(err.message || "Local bridge unavailable.");
     }
-  }, [isLocal]);
+  }, [isLocal, accessKey, apiFetch]);
 
   useEffect(() => {
-    if (isLocal) refresh();
-  }, [isLocal, refresh]);
+    if (isLocal && accessKey) refresh();
+  }, [isLocal, accessKey, refresh]);
 
   useEffect(() => {
     if (bridge !== "connected" || !selectedId) {
@@ -54,8 +64,8 @@ function LiveMemoryPanel() {
     }
     const controller = new AbortController();
     setDetail(null);
-    fetch("/api/v1/memory/" + encodeURIComponent(selectedId), {
-      cache: "no-store", signal: controller.signal,
+    apiFetch("/api/v1/memory/" + encodeURIComponent(selectedId), {
+      signal: controller.signal,
     })
       .then(response => {
         if (!response.ok) throw new Error("Memory details unavailable");
@@ -66,7 +76,7 @@ function LiveMemoryPanel() {
         if (err.name !== "AbortError") setError(err.message || "Detail lookup failed");
       });
     return () => controller.abort();
-  }, [selectedId, bridge]);
+  }, [selectedId, bridge, apiFetch]);
 
   const loopEvents = (snapshot?.events || []).filter(event => event.stage === "LOOP");
   const summaries = snapshot?.counts || {};
@@ -84,13 +94,37 @@ function LiveMemoryPanel() {
           <p>Inspectable SQLite ancestry, operator-declared evidence, contradictions and ninth-gear receipts.</p>
         </div>
         {bridge === "connected" && (
-          <button className="secondary" onClick={refresh} type="button">REFRESH SNAPSHOT</button>
+          <div className="inspector-buttons">
+            <button className="secondary" onClick={refresh} type="button">REFRESH SNAPSHOT</button>
+            <button className="secondary" onClick={() => {
+              setAccessKey(""); setEntry(""); setBridge("disconnected");
+              setSnapshot(null); setDetail(null);
+            }} type="button">LOCK INSPECTOR</button>
+          </div>
         )}
       </div>
       {bridge !== "connected" ? (
         <div className="offline-note">
           <strong>{bridge === "checking" ? "Connecting to local memory…" : "Static simulator only"}</strong>
-          <p>The public visual lab cannot connect to your computer or read its databases. Open the separate local read-only server to view real records.</p>
+          <p>The public visual lab cannot access your computer's memory. Start the separate local read-only server, then enter the access key displayed in its terminal.</p>
+          {isLocal && (
+            <form className="inspector-auth" onSubmit={event => {
+              event.preventDefault();
+              if (entry.trim()) {
+                setSnapshot(null); setDetail(null);
+                setAccessKey(entry.trim());
+              }
+            }}>
+              <label htmlFor="inspector-key">LOCAL ACCESS KEY</label>
+              <input id="inspector-key" type="password" autoComplete="off"
+                spellCheck={false} value={entry}
+                placeholder="Paste the current terminal key"
+                onChange={event => setEntry(event.target.value)} />
+              <button className="secondary" type="submit" disabled={!entry.trim()}>
+                UNLOCK READ-ONLY INSPECTOR
+              </button>
+            </form>
+          )}
           {error && <p className="error-message">{error}</p>}
           <code>phi-memory9 serve --db ./lab.sqlite3</code>
         </div>
