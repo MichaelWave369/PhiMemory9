@@ -35,7 +35,7 @@ class R05BenchmarkTests(unittest.TestCase):
     def test_no_claim_of_production_performance(self):
         output = run_heldout_r05()
         self.assertIn("not a neural embedding", output["limitations"].lower())
-        self.assertIn("not independently", output["limitations"].lower())
+        self.assertIn("not an independently collected holdout", output["limitations"].lower())
         self.assertTrue(all("top_match" in row["results"]["lexical"] for row in output["queries"]))
 
 
