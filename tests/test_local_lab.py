@@ -107,15 +107,51 @@ class HTTPTests(unittest.TestCase):
         self.thread.join(timeout=3)
         self.tmp.cleanup()
 
-    def request(self, path, method="GET", headers=None):
+    def request(self, path, method="GET", headers=None, authorized=True):
+        request_headers = dict(headers or {})
+        if authorized and path.startswith("/api/v1/"):
+            request_headers.setdefault(
+                "Authorization", "Bearer " + self.server.access_token
+            )
         req = urllib.request.Request(
-            self.host + path, method=method, headers=headers or {}
+            self.host + path, method=method, headers=request_headers
         )
         try:
             with urllib.request.urlopen(req, timeout=4) as response:
                 return response.status, response.headers, response.read()
         except urllib.error.HTTPError as error:
             return error.code, error.headers, error.read()
+
+    def test_access_key_required_for_all_database_endpoints(self):
+        for endpoint in (
+            "/api/v1/status", "/api/v1/snapshot",
+            "/api/v1/memory/" + self.seed["memory_id"],
+        ):
+            status, _, _ = self.request(endpoint, authorized=False)
+            self.assertEqual(status, 401)
+            status, _, _ = self.request(
+                endpoint, authorized=False,
+                headers={"Authorization": "Bearer wrong"},
+            )
+            self.assertEqual(status, 401)
+        status, _, _ = self.request(
+            "/api/v1/snapshot?token=" + self.server.access_token,
+            authorized=False,
+        )
+        self.assertEqual(status, 401)
+        status, _, body = self.request("/api/v1/status")
+        self.assertEqual(status, 200)
+        self.assertNotIn(self.server.access_token.encode(), body)
+
+    def test_static_assets_are_public_but_secret_is_not_embedded(self):
+        status, _, html = self.request("/PhiMemory9/", authorized=False)
+        self.assertEqual(status, 200)
+        self.assertNotIn(self.server.access_token.encode(), html)
+        self.assertGreaterEqual(len(self.server.access_token), 24)
+
+    def test_short_operator_secret_refused(self):
+        with self.assertRaises(ValueError):
+            make_server(self.dbpath, 0, access_token="guessable")
 
     def test_json_and_browser_assets_share_local_origin(self):
         code, headers, body = self.request("/api/v1/status")

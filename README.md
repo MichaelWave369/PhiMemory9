@@ -44,6 +44,28 @@ reranking on **six hand-built synthetic queries**. Neither is a vector model;
 the dataset favors historic-wording recovery and is not evidence of general
 retrieval superiority. See [R0.2 Research](docs/RESEARCH_R02.md).
 
+## R0.5: gated local memory and frozen retrieval evaluation
+
+The localhost-only read API now requires a fresh high-entropy bearer access key
+printed by `phi-memory9 serve`. Enter the key in the local React inspector.
+The key stays in browser-tab memory and **is never sent in a URL**. Static
+demo access is unaffected. The API remains read-only, and operator-approved
+local CLI plans remain the only way to apply mutations. See
+[access and threat model](docs/LOCAL_ACCESS_R05.md).
+
+The new deterministic **36-query synthetic** benchmark compares lexical
+retrieval, ancestry-aware lexical retrieval, sparse TF-IDF on current content
+and sparse TF-IDF with ancestral text. It includes negative queries, fixed
+abstention thresholds, and a manifest SHA-256:
+
+~~~sh
+phi-memory9 benchmark-r05
+~~~
+
+This is a transparent, authored test fixture, **not** an independently
+collected real-world held-out evaluation or proof of superior retrieval.
+See [R0.5 benchmark protocol](docs/R05_BENCHMARK_PROTOCOL.md).
+
 ## R0.4: approved memory operations and privacy exports
 
 A **separate local CLI** now accepts strict JSON mutation plans that require
@@ -103,7 +125,7 @@ PYTHONPATH=src python examples/nested_demo.py
 - Repeated identical content within one blob is rejected; depth and loop limits are enforced.
 - No validated retrieval superiority is claimed. The R0.2 tiny synthetic comparison is exploratory only.
 
-**Status:** R0.4 governed CLI plans and privacy exports; R0.3 local read-only inspector; R0.2 evidence/retrieval; R0.1 lifecycle core. Not integrated with PhiStream, Altermath, PhiDiscovery, Sovereign Memory Lattice, or SuperPhiVessel. No agent authority, no network transport, and no automatic cross-system memory sharing.
+**Status:** R0.5 token-gated local reader and frozen synthetic retrieval benchmark, with R0.4 operator-approved mutation plans, R0.3 local SQLite inspector, R0.2 evidence, and R0.1 lifecycle core. Not integrated with PhiStream, Altermath, PhiDiscovery, Sovereign Memory Lattice, or SuperPhiVessel. No agent authority, no network transport, and no automatic cross-system memory sharing.
 
 Read [Architecture](docs/ARCHITECTURE.md) and [the Python example](examples/nested_demo.py).
 

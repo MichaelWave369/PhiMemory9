@@ -7,6 +7,8 @@ compiled React lab. Do not open databases containing secrets in R0.3.
 from __future__ import annotations
 
 import json
+import hmac
+import secrets
 import mimetypes
 import re
 import sqlite3
@@ -210,7 +212,8 @@ def _count_events(db: sqlite3.Connection, memory_id: str) -> int:
 
 
 def make_server(database: str | Path, port: int = 8769,
-                web_dir: str | Path | None = None) -> ThreadingHTTPServer:
+                web_dir: str | Path | None = None,
+                access_token: str | None = None) -> ThreadingHTTPServer:
     """Build a strictly loopback HTTP service. Caller explicitly starts it."""
     if not 0 <= port <= 65535:
         raise ValueError("Port must be 0..65535")
@@ -219,6 +222,12 @@ def make_server(database: str | Path, port: int = 8769,
     reader.status()
     public = Path(web_dir).resolve() if web_dir else REPO_WEB_DIST
     root = public.resolve()
+    # A fresh secret is generated on each launch and never sent in HTML.
+    token = access_token if access_token is not None else secrets.token_urlsafe(32)
+    if not isinstance(token, str) or len(token) < 24 or len(token) > 256 or any(
+        c.isspace() for c in token
+    ):
+        raise ValueError("Access token must be a single 24..256 character secret")
 
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, format: str, *args: object) -> None:
@@ -230,6 +239,7 @@ def make_server(database: str | Path, port: int = 8769,
             self.send_header("Content-Type", mime)
             self.send_header("Content-Length", str(length))
             self.send_header("Cache-Control", "no-store")
+            self.send_header("Vary", "Authorization")
             self.send_header("X-Content-Type-Options", "nosniff")
             self.send_header("Referrer-Policy", "no-referrer")
             self.send_header("X-Frame-Options", "DENY")
@@ -266,6 +276,11 @@ def make_server(database: str | Path, port: int = 8769,
                 self._json(414, {"error": "Path too long"})
                 return
             path = urlsplit(self.path).path
+            if path.startswith("/api/v1/"):
+                bearer = self.headers.get("Authorization", "")
+                if not hmac.compare_digest(bearer, "Bearer " + token):
+                    self._json(401, {"error": "Local inspector access key required"})
+                    return
             try:
                 if path == "/api/v1/status":
                     self._json(200, reader.status())
@@ -319,6 +334,7 @@ def make_server(database: str | Path, port: int = 8769,
 
     server = ThreadingHTTPServer(("127.0.0.1", port), Handler)
     server.daemon_threads = True
+    server.access_token = token
     return server
 
 

@@ -20,6 +20,8 @@ jobs:
         run: phi-memory9 evidence-demo
       - name: Reproducible retrieval baseline
         run: phi-memory9 benchmark
+      - name: Frozen synthetic R0.5 retrieval report
+        run: phi-memory9 benchmark-r05 > "$RUNNER_TEMP/benchmark-r05.json"
       - name: Seed and audit a new synthetic local database
         run: |
           phi-memory9 seed-lab --db "$RUNNER_TEMP/phi-r03-fixture.sqlite3"

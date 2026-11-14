@@ -41,6 +41,20 @@ which claims are correct. A hash chain is not tamperproof storage.
 plus a tiny synthetic benchmark. Read [R0.2 Research](RESEARCH_R02.md) for
 exact scoring, known biases, and limitations.
 
+## R0.5 local security and evaluation
+
+The local read-only HTTP inspector requires an ephemeral per-process bearer
+token for all `/api/v1/` endpoints, generated using Python's secure random
+source. The React tab holds the key in memory; it is never included in a URL.
+This is a useful loopback access gate but not full multi-user authentication
+or protection from privileged local processes. The CLI mutation path remains
+separate.
+
+The frozen 36-query synthetic report compares lexical and sparse-vector
+retrieval with and without access to retired ancestor wording. Exact
+thresholds, labels, queries and limitations are published in
+[R0.5 benchmark protocol](R05_BENCHMARK_PROTOCOL.md).
+
 ## React visualization
 
 `web/` is an explicitly synthetic browser simulator. It visually steps through the nine stages, displays a nested blob tree, and allows an operator to select a ninth-gear route. It is deliberately not connected to the SQLite runtime: UI graph nodes and event messages are illustrative, not canonical memory receipts. React/Vite builds are checked in CI.
