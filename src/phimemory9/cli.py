@@ -5,6 +5,7 @@ import json
 from .core import MemoryEngine
 from .evidence import EvidenceLedger
 from .retrieval import benchmark_fixture
+from .local_lab import make_server, seed_lab
 
 
 def main() -> None:
@@ -25,7 +26,33 @@ def main() -> None:
     commands.add_parser(
         "benchmark", help="Compare literal and lineage retrieval on synthetic data"
     )
+    seed = commands.add_parser(
+        "seed-lab", help="Create a new synthetic SQLite fixture database (never overwrite)"
+    )
+    seed.add_argument("--db", required=True)
+    serve = commands.add_parser(
+        "serve", help="Serve compiled React plus read-only SQLite inspector on loopback"
+    )
+    serve.add_argument("--db", required=True)
+    serve.add_argument("--port", type=int, default=8769)
+    serve.add_argument("--web-dir", default=None)
     args = parser.parse_args()
+
+    if args.command == "seed-lab":
+        print(json.dumps(seed_lab(args.db), indent=2))
+        return
+
+    if args.command == "serve":
+        server = make_server(args.db, args.port, args.web_dir)
+        print(f"Read-only ΦMemory9 lab: http://127.0.0.1:{server.server_port}/PhiMemory9/")
+        print("LOCAL INSPECTION ONLY · CTRL+C to stop · No write API")
+        try:
+            server.serve_forever()
+        except KeyboardInterrupt:
+            pass
+        finally:
+            server.server_close()
+        return
 
     if args.command == "benchmark":
         print(json.dumps(benchmark_fixture(), indent=2))
