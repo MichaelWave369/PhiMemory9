@@ -1,4 +1,4 @@
-# ΦPMA-9 Architecture R0.1
+# ΦPMA-9 Architecture: R0.1 core + R0.2 evidence and retrieval
 
 ## Nine operations, not a compulsory linear life
 
@@ -30,6 +30,17 @@ Safety constraints in R0.1:
 - The code enforces graph ancestry acyclicity through fresh IDs and immutable parent links.
 - A source pointer is metadata, not a proof of source quality or factual certainty.
 
+## Evidence ledger and retrieval (R0.2)
+
+A separate local `EvidenceLedger` provides operator-declared evidence
+attachments, explicit contradictions, source-dependency groups, and an
+auditable hash chain. This does not alter nine-stage memory events or decide
+which claims are correct. A hash chain is not tamperproof storage.
+
+`retrieval.py` offers basic lexical and ancestry-augmented lexical retrieval,
+plus a tiny synthetic benchmark. Read [R0.2 Research](RESEARCH_R02.md) for
+exact scoring, known biases, and limitations.
+
 ## React visualization
 
 `web/` is an explicitly synthetic browser simulator. It visually steps through the nine stages, displays a nested blob tree, and allows an operator to select a ninth-gear route. It is deliberately not connected to the SQLite runtime: UI graph nodes and event messages are illustrative, not canonical memory receipts. React/Vite builds are checked in CI.
@@ -37,7 +48,7 @@ Safety constraints in R0.1:
 ## Intentional limitations
 
 - SQLite is a local single-process prototype; concurrency/transaction robustness beyond SQLite defaults is not established.
-- No embeddings, similarity index, retrieval benchmarks, access-control layer, or schema migrations yet.
+- No embeddings, production-quality search, access-control layer, or schema migrations yet; only a deliberately narrow synthetic retrieval fixture.
 - No data retention policy or privacy classification. Do not store secrets or sensitive user data in this experimental version.
 - LIBERATION exports full text and provenance; callers must review privacy and permission boundaries before sharing.
 - No demonstrated empirical advantage over vector search, event sourcing, or ordinary knowledge graphs.
