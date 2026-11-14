@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "phimemory9"
+version = "0.1.0"
+description = "Recursive Altermath nine-operation event-sourced memory research engine"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [{name = "PHI369 Labs"}]
+dependencies = []
+
+[project.scripts]
+phi-memory9 = "phimemory9.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
