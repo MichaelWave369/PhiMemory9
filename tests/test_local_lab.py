@@ -41,6 +41,22 @@ class ReaderTests(unittest.TestCase):
         self.assertEqual(len(details["contradictions"]), 1)
         self.assertEqual(details["evidence"][0]["kind"], "synthetic")
 
+    def test_governed_receipt_visible_in_read_only_snapshot(self):
+        from phimemory9.governance import SCHEMA, apply, fingerprint
+        with MemoryEngine(self.path) as engine:
+            plan = {
+                "schema": SCHEMA, "action": "loop", "route": "hold",
+                "reason": "Synthetic operator review",
+                "memory_id": self.seed["memory_id"],
+            }
+            apply(engine, plan, fingerprint(plan))
+        reader = SnapshotReader(self.path)
+        snapshot = reader.snapshot()
+        self.assertEqual(snapshot["counts"]["approvals"], 1)
+        self.assertEqual(snapshot["approvals"][0]["action"], "loop")
+        self.assertEqual(snapshot["approvals"][0]["result"]["route"], "hold")
+        self.assertEqual(reader.status()["counts"]["approvals"], 1)
+
     def test_reader_does_not_modify_file_or_event_count(self):
         before = self.path.read_bytes()
         reader = SnapshotReader(self.path)

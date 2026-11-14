@@ -86,7 +86,7 @@ class SnapshotReader:
                     key: _count(db, table) for key, table in (
                         ("blobs", "blobs"), ("memories", "memories"),
                         ("events", "events"), ("claims", "e_claims"),
-                        ("contradictions", "e_conflicts"),
+                        ("contradictions", "e_conflicts"), ("approvals", "g_approvals"),
                     )
                 },
                 "evidence_available": _exists(db, "e_claims"),
@@ -110,21 +110,32 @@ class SnapshotReader:
                           "FROM e_conflicts ORDER BY created_at,id LIMIT ?", (MAX_ROWS,))
                 if _exists(db, "e_conflicts") else []
             )
+            approvals = (
+                _rows(db, "SELECT fingerprint,action,reason,applied_at,result_json "
+                          "FROM g_approvals ORDER BY applied_at DESC,fingerprint DESC LIMIT ?",
+                      (MAX_ROWS,))
+                if _exists(db, "g_approvals") else []
+            )
+            for item in approvals:
+                try:
+                    item["result"] = json.loads(item.pop("result_json"))
+                except (ValueError, TypeError):
+                    item["result"] = {"warning": "Unreadable approval result"}
             counts = {
                 name: _count(db, table) for name, table in (
                     ("blobs", "blobs"), ("memories", "memories"),
                     ("events", "events"), ("claims", "e_claims"),
-                    ("contradictions", "e_conflicts"),
+                    ("contradictions", "e_conflicts"), ("approvals", "g_approvals"),
                 )
             }
             return {
                 "schema": "phi-memory9/local-snapshot-r0.3",
                 "mode": "read_only",
                 "blobs": blobs, "memories": memories, "events": events,
-                "claims": claims, "contradictions": conflicts, "counts": counts,
+                "claims": claims, "contradictions": conflicts, "approvals": approvals, "counts": counts,
                 "truncated": {
                     k: counts[k] > MAX_ROWS for k in
-                    ("blobs", "memories", "events", "claims", "contradictions")
+                    ("blobs", "memories", "events", "claims", "contradictions", "approvals")
                 },
                 "caution": "Claims and sources are operator declarations, not verified facts.",
             }
