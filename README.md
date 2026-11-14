@@ -26,7 +26,19 @@ phi-memory9 demo --db ./phi-memory9.sqlite3
 phi-memory9 verify --db ./phi-memory9.sqlite3
 ~~~
 
-Run the interactive demo directly from source:
+## React visual lab
+
+The `web/` directory contains a **synthetic, browser-only** nine-stage visual lab. It illustrates nested blobs and operator-selected LOOP routing; it does **not** read or write the SQLite engine.
+
+~~~sh
+cd web
+npm install
+npm run dev
+~~~
+
+Use `npm run build` in `web/` for static GitHub Pages-compatible assets (base path `/PhiMemory9/`). Hosting is **not enabled by this commit**.
+
+Run the Python demo directly from source:
 
 ~~~sh
 PYTHONPATH=src python examples/nested_demo.py
