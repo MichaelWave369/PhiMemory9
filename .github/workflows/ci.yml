@@ -20,6 +20,10 @@ jobs:
         run: phi-memory9 evidence-demo
       - name: Reproducible retrieval baseline
         run: phi-memory9 benchmark
+      - name: Seed and audit a new synthetic local database
+        run: |
+          phi-memory9 seed-lab --db "$RUNNER_TEMP/phi-r03-fixture.sqlite3"
+          phi-memory9 verify-evidence --db "$RUNNER_TEMP/phi-r03-fixture.sqlite3"
 
   web:
     runs-on: ubuntu-latest

@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import LiveMemoryPanel from "./LiveMemoryPanel.jsx";
 
 const STAGES = [
   { name: "ENTER", subtitle: "Receive", description: "Information crosses into the selected memory blob with a source pointer." },
@@ -121,12 +122,13 @@ function App() {
 
       <main className="layout">
         <section className="intro">
-          <div className="eyebrow">ΦPMA-9 / R0.1 · SYNTHETIC VISUAL LAB</div>
+          <div className="eyebrow">ΦPMA-9 / R0.3 · LIVING MEMORY RESEARCH LAB</div>
           <h1>Memory isn't a shelf.<br /><em>It's a living sequence.</em></h1>
           <p>Explore eight transformations and a ninth routing gear. Each completed loop can carry knowledge to another nested context while preserving the path home.</p>
-          <div className="warning">SIMULATION ONLY · This visualization is not connected to the persistent Python engine. No factual claims, AI models, or private data are processed.</div>
+          <div className="warning">The inspector can show actual local SQLite receipts when started explicitly. The nine-stage controls below remain a separate, synthetic simulation.</div>
         </section>
 
+        <LiveMemoryPanel />
         <section className="panel visual">
           <div className="panel-heading"><span>01 / NINE-STAGE GEAR</span><span>CYCLE {String(cycle).padStart(2, "0")}</span></div>
           <StageRing phase={phase} onStageHover={setHover} />
@@ -195,7 +197,7 @@ function App() {
           </div>
         </section>
       </main>
-      <footer>ΦPMA-9 R0.1 · RESEARCH ARCHITECTURE, NOT A CLAIM OF VERIFIED COGNITION OR NATURAL LAW.</footer>
+      <footer>ΦPMA-9 R0.3 · RESEARCH ARCHITECTURE, NOT A CLAIM OF VERIFIED COGNITION OR NATURAL LAW.</footer>
     </div>
   );
 }
