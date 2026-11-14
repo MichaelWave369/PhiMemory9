@@ -30,6 +30,10 @@ Safety constraints in R0.1:
 - The code enforces graph ancestry acyclicity through fresh IDs and immutable parent links.
 - A source pointer is metadata, not a proof of source quality or factual certainty.
 
+## React visualization
+
+`web/` is an explicitly synthetic browser simulator. It visually steps through the nine stages, displays a nested blob tree, and allows an operator to select a ninth-gear route. It is deliberately not connected to the SQLite runtime: UI graph nodes and event messages are illustrative, not canonical memory receipts. React/Vite builds are checked in CI.
+
 ## Intentional limitations
 
 - SQLite is a local single-process prototype; concurrency/transaction robustness beyond SQLite defaults is not established.
