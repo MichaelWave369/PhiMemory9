@@ -72,6 +72,9 @@ def main() -> None:
     if args.command == "serve":
         server = make_server(args.db, args.port, args.web_dir)
         print(f"Read-only ΦMemory9 lab: http://127.0.0.1:{server.server_port}/PhiMemory9/")
+        print("ACCESS KEY (paste into local browser; never put in URL):")
+        print(server.access_token)
+        print("Keep this terminal key private; it changes on every server restart.")
         print("LOCAL INSPECTION ONLY · CTRL+C to stop · No write API")
         try:
             server.serve_forever()
