@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import GovernedPlanPanel from "./GovernedPlanPanel.jsx";
 
 /** R0.3 inspection surface. There are intentionally NO write actions here. */
 function LiveMemoryPanel() {
@@ -102,6 +103,7 @@ function LiveMemoryPanel() {
               ["EVENTS", summaries.events],
               ["CLAIMS", summaries.claims],
               ["CONTRADICTIONS", summaries.contradictions],
+              ["APPROVED PLANS", summaries.approvals],
             ].map(([name, value]) => (
               <div className="live-metric" key={name}><strong>{value ?? 0}</strong><span>{name}</span></div>
             ))}
@@ -178,6 +180,15 @@ function LiveMemoryPanel() {
                   <small>{event.recorded_at}</small>
                 </div>
               )) : <p className="muted">No ninth-gear routing events have been recorded.</p>}
+              <h3>Governed plan receipts</h3>
+              {(snapshot.approvals || []).length ? snapshot.approvals.slice(0, 12).map(record => (
+                <div className="loop-record" key={record.fingerprint}>
+                  <strong>{record.action.toUpperCase()} · OPERATOR-APPROVED</strong>
+                  <p>PLAN: {record.fingerprint.slice(0, 18)}…</p>
+                  <p>REASON: {record.reason}</p>
+                  <small>{record.applied_at}</small>
+                </div>
+              )) : <p className="muted">No explicitly approved CLI plans yet.</p>}
               <h3>Selected memory events</h3>
               {detail?.events?.length ? detail.events.map(event => (
                 <div className="event-line" key={event.id}>
@@ -187,6 +198,7 @@ function LiveMemoryPanel() {
               )) : <p className="muted">Choose a memory to view its real event history.</p>}
             </div>
           </div>
+          {activeMemory && <GovernedPlanPanel key={activeMemory.id} memory={activeMemory} blobs={snapshot.blobs} />}
           <p className="read-only-warning">READ ONLY. The loop controls below still run the independent synthetic simulator; they do not mutate SQLite. No agent or external system has memory authority.</p>
         </>
       )}

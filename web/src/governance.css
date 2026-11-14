@@ -1,0 +1,11 @@
+.governance-panel{border-top:1px solid #355475;margin-top:28px;padding-top:20px;min-width:0}
+.gov-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:15px}
+.gov-form label{display:flex;flex-direction:column;gap:8px;font-size:10px;letter-spacing:1px;color:#a8bce0;font-weight:700}
+.gov-form input,.gov-form select,.gov-form textarea{background:#112b44;color:#e6edf9;border:1px solid #496787;border-radius:7px;padding:11px;min-width:0;font-size:12px;letter-spacing:0;font-weight:400}
+.gov-form label:has(textarea),.gov-form label:has(input){grid-column:1/-1}
+.gov-preview{white-space:pre-wrap;overflow-wrap:anywhere;font-size:11px;color:#b1d0f6;background:#091729;padding:14px;border:1px solid #2d4966;border-radius:7px;max-height:240px;overflow:auto}
+.gov-download{width:100%;border-radius:8px;padding:12px 14px;font-size:11px;letter-spacing:1px;font-weight:800;display:flex;justify-content:space-between;align-items:center}
+.gov-help{border:1px solid #5d7653;background:#22372944;border-radius:9px;padding:13px;margin-top:12px}
+.gov-help p{overflow-wrap:anywhere;color:#c3d6ee;font-size:12px}
+.gov-help code{font-size:11px;color:#f1c787}
+@media(max-width:760px){.gov-form{grid-template-columns:1fr}}

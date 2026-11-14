@@ -8,6 +8,7 @@ import hashlib
 import json
 import sqlite3
 import uuid
+from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -74,6 +75,35 @@ class MemoryEngine:
             CREATE INDEX IF NOT EXISTS idx_events_memory ON events(memory_id, id);
         """)
 
+    @contextmanager
+    def transaction(self):
+        """Nested-safe atomic transaction; outer scope owns final commit.
+
+        Required for approved plans: a memory event and its approval receipt
+        must commit or roll back together. No existing transaction is silently
+        committed by a nested memory operation.
+        """
+        if self.db.in_transaction:
+            marker = "phi_" + uuid.uuid4().hex
+            self.db.execute(f"SAVEPOINT {marker}")
+            try:
+                yield
+            except BaseException:
+                self.db.execute(f"ROLLBACK TO SAVEPOINT {marker}")
+                self.db.execute(f"RELEASE SAVEPOINT {marker}")
+                raise
+            else:
+                self.db.execute(f"RELEASE SAVEPOINT {marker}")
+        else:
+            self.db.execute("BEGIN IMMEDIATE")
+            try:
+                yield
+            except BaseException:
+                self.db.rollback()
+                raise
+            else:
+                self.db.commit()
+
     def __enter__(self) -> "MemoryEngine":
         return self
 
@@ -137,7 +167,7 @@ class MemoryEngine:
         if count >= MAX_BLOBS:
             raise MemoryError9("Blob budget exhausted")
         blob_id = _id()
-        with self.db:
+        with self.transaction():
             self.db.execute(
                 "INSERT INTO blobs VALUES(?,?,?,?)",
                 (blob_id, label.strip(), parent_blob_id, _utc()),
@@ -173,14 +203,14 @@ class MemoryEngine:
         return memory_id
 
     def enter(self, blob_id: str, content: str, source_ref: str | None = None) -> str:
-        with self.db:
+        with self.transaction():
             return self._enter(blob_id, content, source_ref)
 
     def death(self, memory_id: str, reason: str) -> None:
         memory = self._row("memories", memory_id)
         if memory["status"] != "active" or not reason.strip():
             raise MemoryError9("DEATH requires an active memory and an explicit reason")
-        with self.db:
+        with self.transaction():
             self.db.execute(
                 "UPDATE memories SET status='retired' WHERE id=?", (memory_id,)
             )
@@ -190,7 +220,7 @@ class MemoryEngine:
         memory = self._row("memories", memory_id)
         if memory["status"] != "retired" or not reason.strip():
             raise MemoryError9("RESTORE requires retired memory and explicit evidence/reason")
-        with self.db:
+        with self.transaction():
             self.db.execute(
                 "UPDATE memories SET status='active' WHERE id=?", (memory_id,)
             )
@@ -200,7 +230,7 @@ class MemoryEngine:
         source = self._row("memories", memory_id)
         if source["blob_id"] == target_blob_id:
             raise MemoryError9("TRANSFER must change blob context")
-        with self.db:
+        with self.transaction():
             child = self._enter(
                 target_blob_id, source["content"], source["source_ref"], memory_id
             )
@@ -210,7 +240,7 @@ class MemoryEngine:
 
     def rebirth(self, memory_id: str, content: str, target_blob_id: str) -> str:
         source = self._row("memories", memory_id)
-        with self.db:
+        with self.transaction():
             child = self._enter(target_blob_id, content, source["source_ref"], memory_id)
             self._event(memory_id, "REBIRTH", child_memory_id=child,
                         target_blob_id=target_blob_id)
@@ -220,7 +250,7 @@ class MemoryEngine:
         source = self._row("memories", memory_id)
         if source["status"] != "active" or not reason.strip():
             raise MemoryError9("RENEW requires active memory and stated reason")
-        with self.db:
+        with self.transaction():
             child = self._enter(
                 source["blob_id"], revised_content, source["source_ref"], memory_id
             )
@@ -243,7 +273,7 @@ class MemoryEngine:
 
     def liberation(self, memory_id: str) -> dict[str, Any]:
         """Explicit portable export; does not send any data over the network."""
-        with self.db:
+        with self.transaction():
             source = self.memory(memory_id)
             ancestors = [self.memory(mid) for mid in self.lineage(memory_id)]
             self._event(memory_id, "LIBERATION", format="phi-memory9/v0.1")
@@ -272,7 +302,7 @@ class MemoryEngine:
         if loops >= MAX_LOOPS_PER_MEMORY:
             raise MemoryError9("LOOP budget exhausted for memory")
         current_blob = self._row("blobs", source["blob_id"])
-        with self.db:
+        with self.transaction():
             next_blob_id: str | None = None
             next_memory_id: str | None = None
             if route == "inward":
