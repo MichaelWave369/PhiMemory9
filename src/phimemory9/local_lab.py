@@ -55,7 +55,10 @@ class SnapshotReader:
     """Read snapshots only. Even its SQLite connection opens with mode=ro."""
 
     def __init__(self, database: str | Path):
-        self.path = Path(database).expanduser().resolve(strict=True)
+        try:
+            self.path = Path(database).expanduser().resolve(strict=True)
+        except FileNotFoundError as exc:
+            raise ValueError("SQLite file does not exist") from exc
         if not self.path.is_file():
             raise ValueError("A real SQLite file is required")
 
@@ -221,7 +224,7 @@ def make_server(database: str | Path, port: int = 8769,
             self.send_header("X-Frame-Options", "DENY")
             self.send_header(
                 "Content-Security-Policy",
-                "default-src 'self'; script-src 'self'; style-src 'self'; "
+                "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; "
                 "img-src 'self' data:; connect-src 'self'; "
                 "frame-ancestors 'none'; base-uri 'none'; form-action 'none'",
             )
@@ -238,9 +241,7 @@ def make_server(database: str | Path, port: int = 8769,
             if host not in (f"127.0.0.1:{port_now}", f"localhost:{port_now}"):
                 return False
             origin = self.headers.get("Origin")
-            if origin is not None and origin not in (
-                f"http://127.0.0.1:{port_now}", f"http://localhost:{port_now}"
-            ):
+            if origin is not None and origin != f"http://{host}":
                 return False
             if self.headers.get("Sec-Fetch-Site", "") in ("cross-site", "same-site"):
                 return False

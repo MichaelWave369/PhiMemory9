@@ -151,7 +151,7 @@ class HTTPTests(unittest.TestCase):
 
     def test_bad_and_unknown_memory_ids(self):
         code, _, _ = self.request("/api/v1/memory/../secret")
-        self.assertEqual(code, 404)
+        self.assertEqual(code, 400)
         code, _, _ = self.request("/api/v1/memory/" + "a"*32)
         self.assertEqual(code, 404)
 
