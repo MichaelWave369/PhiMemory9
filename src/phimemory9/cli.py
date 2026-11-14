@@ -5,6 +5,9 @@ import json
 from .core import MemoryEngine
 from .evidence import EvidenceLedger
 from .retrieval import benchmark_fixture
+from .governance import (
+    apply, export_digest, load_plan, review, save_export,
+)
 from .local_lab import make_server, seed_lab
 
 
@@ -36,6 +39,30 @@ def main() -> None:
     serve.add_argument("--db", required=True)
     serve.add_argument("--port", type=int, default=8769)
     serve.add_argument("--web-dir", default=None)
+    plan_review = commands.add_parser(
+        "plan-review", help="Inspect a proposed local mutation and its SHA-256"
+    )
+    plan_review.add_argument("--db", required=True)
+    plan_review.add_argument("--plan", required=True)
+    plan_apply = commands.add_parser(
+        "apply-plan", help="Apply a reviewed plan by exact SHA-256 approval"
+    )
+    plan_apply.add_argument("--db", required=True)
+    plan_apply.add_argument("--plan", required=True)
+    plan_apply.add_argument("--approve-sha256", required=True)
+    export_review = commands.add_parser(
+        "export-review", help="Review digest needed for local full export"
+    )
+    export_review.add_argument("--db", required=True)
+    export_review.add_argument("--memory", required=True)
+    export_memory = commands.add_parser(
+        "export-memory", help="Save an explicitly requested local privacy export"
+    )
+    export_memory.add_argument("--db", required=True)
+    export_memory.add_argument("--memory", required=True)
+    export_memory.add_argument("--out", required=True)
+    export_memory.add_argument("--include-content", action="store_true")
+    export_memory.add_argument("--approve-sha256", default=None)
     args = parser.parse_args()
 
     if args.command == "seed-lab":
@@ -59,7 +86,24 @@ def main() -> None:
         return
 
     with MemoryEngine(args.db) as engine:
-        if args.command == "demo":
+        if args.command == "plan-review":
+            report = review(engine, load_plan(args.plan))
+        elif args.command == "apply-plan":
+            report = apply(engine, load_plan(args.plan), args.approve_sha256)
+        elif args.command == "export-review":
+            report = {
+                "schema": "phi-memory9/privacy-export-r0.4",
+                "memory_id": args.memory,
+                "full_export_sha256": export_digest(engine, args.memory),
+                "notice": "Approve exact content-bound digest only if full export is intended.",
+            }
+        elif args.command == "export-memory":
+            report = save_export(
+                engine, args.memory, args.out,
+                include_content=args.include_content,
+                approved_sha256=args.approve_sha256,
+            )
+        elif args.command == "demo":
             root = engine.create_blob("Observation")
             memory = engine.enter(
                 root, "A system gains a new fact.",

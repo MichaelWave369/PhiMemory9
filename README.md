@@ -44,6 +44,23 @@ reranking on **six hand-built synthetic queries**. Neither is a vector model;
 the dataset favors historic-wording recovery and is not evidence of general
 retrieval superiority. See [R0.2 Research](docs/RESEARCH_R02.md).
 
+## R0.4: approved memory operations and privacy exports
+
+A **separate local CLI** now accepts strict JSON mutation plans that require
+an exact SHA-256 digest from the explicit `plan-review` step. All memory
+changes and approval receipts commit or roll back together; duplicate plans
+are rejected. The read-only React inspector adds a **Plan Builder** which
+downloads a proposal but **never writes to the server**.
+
+~~~sh
+phi-memory9 plan-review --db ./lab.sqlite3 --plan ./proposed-loop.json
+phi-memory9 apply-plan --db ./lab.sqlite3 --plan ./proposed-loop.json --approve-sha256 REVIEWED_DIGEST
+phi-memory9 export-memory --db ./lab.sqlite3 --memory MEMORY_ID --out ./metadata-export.json
+~~~
+
+Full-content exports require a second, content-bound digest approval.
+See [governance and privacy documentation](docs/GOVERNED_PLANS_R04.md).
+
 ## R0.3: inspect real local SQLite memory
 
 Run a separate **read-only** local memory viewer from the project checkout:
@@ -86,7 +103,7 @@ PYTHONPATH=src python examples/nested_demo.py
 - Repeated identical content within one blob is rejected; depth and loop limits are enforced.
 - No validated retrieval superiority is claimed. The R0.2 tiny synthetic comparison is exploratory only.
 
-**Status:** R0.3 local read-only inspector, R0.2 evidence/retrieval and R0.1 lifecycle core. Not integrated with PhiStream, Altermath, PhiDiscovery, Sovereign Memory Lattice, or SuperPhiVessel. No agent authority, no network transport, and no automatic cross-system memory sharing.
+**Status:** R0.4 governed CLI plans and privacy exports; R0.3 local read-only inspector; R0.2 evidence/retrieval; R0.1 lifecycle core. Not integrated with PhiStream, Altermath, PhiDiscovery, Sovereign Memory Lattice, or SuperPhiVessel. No agent authority, no network transport, and no automatic cross-system memory sharing.
 
 Read [Architecture](docs/ARCHITECTURE.md) and [the Python example](examples/nested_demo.py).
 

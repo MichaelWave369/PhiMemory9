@@ -24,6 +24,13 @@ jobs:
         run: |
           phi-memory9 seed-lab --db "$RUNNER_TEMP/phi-r03-fixture.sqlite3"
           phi-memory9 verify-evidence --db "$RUNNER_TEMP/phi-r03-fixture.sqlite3"
+      - name: Governance CLI approval and privacy smoke test
+        run: |
+          python -c "import json,sys;from phimemory9.governance import SCHEMA;from phimemory9 import MemoryEngine;db=MemoryEngine(sys.argv[1]);mid=db.db.execute('SELECT id FROM memories ORDER BY created_at LIMIT 1').fetchone()[0];open(sys.argv[2],'w').write(json.dumps({'schema':SCHEMA,'action':'loop','reason':'CI synthetic test','memory_id':mid,'route':'hold'}));db.close()" "$RUNNER_TEMP/phi-r03-fixture.sqlite3" "$RUNNER_TEMP/plan.json"
+          phi-memory9 plan-review --db "$RUNNER_TEMP/phi-r03-fixture.sqlite3" --plan "$RUNNER_TEMP/plan.json"
+          python -c "import json,sys;from phimemory9.governance import load_plan,fingerprint;print(fingerprint(load_plan(sys.argv[1])))" "$RUNNER_TEMP/plan.json" > "$RUNNER_TEMP/digest.txt"
+          phi-memory9 apply-plan --db "$RUNNER_TEMP/phi-r03-fixture.sqlite3" --plan "$RUNNER_TEMP/plan.json" --approve-sha256 "$(cat "$RUNNER_TEMP/digest.txt")"
+          phi-memory9 verify --db "$RUNNER_TEMP/phi-r03-fixture.sqlite3"
 
   web:
     runs-on: ubuntu-latest

@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import GovernedPlanPanel from "./GovernedPlanPanel.jsx";
 
 /** R0.3 inspection surface. There are intentionally NO write actions here. */
 function LiveMemoryPanel() {
@@ -187,6 +188,7 @@ function LiveMemoryPanel() {
               )) : <p className="muted">Choose a memory to view its real event history.</p>}
             </div>
           </div>
+          {activeMemory && <GovernedPlanPanel key={activeMemory.id} memory={activeMemory} blobs={snapshot.blobs} />}
           <p className="read-only-warning">READ ONLY. The loop controls below still run the independent synthetic simulator; they do not mutate SQLite. No agent or external system has memory authority.</p>
         </>
       )}
