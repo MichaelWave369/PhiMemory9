@@ -1,0 +1,32 @@
+name: PhiMemory9 tests
+on:
+  push:
+  pull_request:
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install core
+        run: python -m pip install -e .
+      - name: Unit tests
+        run: python -m unittest discover -s tests -v
+      - name: Run demo
+        run: phi-memory9 demo
+
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install visual lab
+        working-directory: web
+        run: npm install --no-audit --no-fund
+      - name: Build React lab
+        working-directory: web
+        run: npm run build
