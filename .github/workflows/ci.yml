@@ -10,10 +10,15 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
       - name: Install core
         run: python -m pip install -e .
       - name: Unit tests
         run: python -m unittest discover -s tests -v
+      - name: Frozen Living Memory canonical vectors
+        run: node scripts/living_conformance.mjs
       - name: Run demo
         run: phi-memory9 demo
       - name: Synthetic evidence and contradiction demo
@@ -47,3 +52,47 @@ jobs:
       - name: Build React lab
         working-directory: web
         run: npm run build
+
+  living-native:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: MichaelWave369/Memoria
+          ref: 94083ad7c710097658ba96b7a1376e5e044d2382
+          path: native/Memoria
+      - uses: actions/checkout@v4
+        with:
+          repository: MichaelWave369/PhiGenesis
+          ref: bfedf68cbc7649adb13da97a78a61e68bbf3d970
+          path: native/PhiGenesis
+      - uses: actions/checkout@v4
+        with:
+          repository: MichaelWave369/XiPhiOmega
+          ref: 18c000897beedfb5a9759befcfd4e2330f61e227
+          path: native/XiPhiOmega
+      - uses: actions/checkout@v4
+        with:
+          repository: MichaelWave369/PhiOS
+          ref: 0eb88a0ab58d51b54962457cdb510f603827bc88
+          path: native/PhiOS
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: python -m pip install -e . 'cryptography>=43'
+      - name: Native disposable-source proof loop
+        run: >-
+          python -m phimemory9.living_demo --output "$RUNNER_TEMP/living-native"
+          --memoria-source native/Memoria --xi-source native/XiPhiOmega
+          --genesis-source native/PhiGenesis --phios-source native/PhiOS --require-native
+      - name: Retain synthetic evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: living-memory-fixture-evidence
+          path: |
+            ${{ runner.temp }}/living-native/*.json
+            ${{ runner.temp }}/living-native/benchmark/report.json

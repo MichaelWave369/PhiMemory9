@@ -1,0 +1,28 @@
+{
+  "authority": "NONE",
+  "blockers": [
+    "real_source_security",
+    "external_identity_and_key_custody",
+    "external_independent_audit",
+    "complete_copy_and_physical_erasure_coverage",
+    "guard_rollback_trust",
+    "native_runtime_authority_mapping",
+    "unseen_real_world_evaluation"
+  ],
+  "checks": {
+    "consent": true,
+    "integrity": true,
+    "learning": true,
+    "native_export": true,
+    "packet_review": true,
+    "representation": true,
+    "restart": true,
+    "revocation": true,
+    "source_creation": true
+  },
+  "evidence_sha256": "bb84634f45f68ec545b37e12d181972a271182c258c46296487d95a5eca96112",
+  "experimental_pass": true,
+  "live_ready": false,
+  "schema": "genomememory-living-demo/v1",
+  "synthetic": true
+}

@@ -1,0 +1,18 @@
+{
+  "authority": "NONE",
+  "blockers": [
+    "real_source_security",
+    "external_identity_and_key_custody",
+    "external_independent_audit",
+    "complete_copy_and_physical_erasure_coverage",
+    "guard_rollback_trust",
+    "native_runtime_authority_mapping",
+    "unseen_real_world_evaluation"
+  ],
+  "declared_experimental_pass": true,
+  "evidence_verified": false,
+  "reason": "untrusted_fixture_declarations_require_independent_review",
+  "report_sha256": "398fda85f55dac27b847b092ec3a00a7544cff31017e16c9d1f65fb746af67db",
+  "schema": "phios-genomememory-advisory/v1",
+  "status": "HELD"
+}

@@ -1,0 +1,13 @@
+{
+  "bytes": 202,
+  "executed": true,
+  "node_source": {
+    "file": "capsule.mjs",
+    "sha256": "896029a965d62ba34de0d672f6bba140be3f08d79bbcd58e07ab777cc95a18cc"
+  },
+  "python_node_agree": true,
+  "python_source": {
+    "file": "capsule.py",
+    "sha256": "fec1bdcb79666971c50b77b44500ef209bb86d03cd3d9850178632b59e81b462"
+  }
+}
