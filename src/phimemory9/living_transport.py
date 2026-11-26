@@ -8,13 +8,22 @@ import hashlib
 import hmac
 import re
 
-from .living_contract import canonical, commitment, fixture_id, Context
+from .living_contract import canonical, commitment, fixture_id, Context, LocalIdentity, strict_loads
 from .living_store import _new, _epoch, _json
 
 PACKET_SCHEMA = 'phageledger-local-fixture/v1'
 FIELDS = {'schema','synthetic','packet_id','source','destination','purpose','project','app',
           'tags','not_before','expires_at','policy_sha256','gene_ids','evidence_event',
           'payload_sha256','authority'}
+
+
+RECEIPT_SCHEMA = 'phageledger-local-receipt/v1'
+RECEIPT_FIELDS = {'schema','packet_id','packet_sha256','evidence_event',
+                  'policy_sha256','destination','status','authority','admitted_at'}
+
+
+def _is_digest(value):
+    return type(value) is str and re.fullmatch('[0-9a-f]{64}',value) is not None
 
 
 def _mac(key, value):
@@ -68,10 +77,14 @@ def admit(store, packet, source, destination, *, now):
         raise PermissionError('authenticated endpoint mismatch')
     if not 0 < body['expires_at']-body['not_before'] <= 3600 or not body['not_before'] <= now < body['expires_at']:
         raise PermissionError('packet outside validity window')
+    if type(body['tags']) is not list or not all(type(t) is str for t in body['tags']):
+        raise ValueError('invalid packet tags')
+    if not _is_digest(body['policy_sha256']) or not _is_digest(body['payload_sha256']):
+        raise ValueError('invalid packet commitments')
     context = Context(body['project'],body['app'],body['purpose'],tuple(body['tags']),body['destination'])
     scope = store._context(context)
     ids = body['gene_ids']
-    if type(ids) is not list or not 1 <= len(ids) <= 9 or ids != sorted(set(ids)):
+    if type(ids) is not list or not 1 <= len(ids) <= 9 or not all(type(gid) is str for gid in ids) or ids != sorted(set(ids)):
         raise ValueError('invalid payload references')
     with store.engine.transaction():
         if any(store._reason(gid,source.principal_id,scope,'transfer',now,body['policy_sha256'])
@@ -83,11 +96,13 @@ def admit(store, packet, source, destination, *, now):
         event = store.db.execute('SELECT body_json FROM lm_events WHERE event_id=? AND kind=?',
                                  (body['evidence_event'],'expression')).fetchone()
         if event is None: raise PermissionError('receipt lineage missing')
-        from .living_contract import strict_loads
         evidence = strict_loads(event[0])
         if (evidence['admitted_ids'] != ids or evidence['held'] or evidence['operation'] != 'transfer' or
             evidence['policy_sha256'] != body['policy_sha256'] or evidence['context'] != scope or
-            evidence['principal'] != source.principal_id):
+            evidence['principal'] != source.principal_id or
+            evidence.get('event_id') != body['evidence_event'] or
+            evidence.get('authority') != 'FIXTURE_ONLY' or
+            type(evidence.get('now')) is not int or evidence['now'] != body['not_before']):
             raise PermissionError('receipt lineage substitution')
         replay_id = store.opaque(source.principal_id+'\0'+body['packet_id'])
         body_check = store.opaque(canonical(body).decode())
@@ -97,8 +112,11 @@ def admit(store, packet, source, destination, *, now):
                 raise PermissionError('reused packet ID with altered body')
             receipt = store.db.execute('SELECT body_json FROM lm_receipts WHERE replay_id=?', (replay_id,)).fetchone()
             if receipt is None: raise PermissionError('durable replay held after restoration or deletion')
-            return strict_loads(receipt[0])
-        receipt_body = dict(schema='phageledger-local-receipt/v1',packet_id=body['packet_id'],
+            cached = strict_loads(receipt[0])
+            if not verify_receipt(cached, destination, packet=packet) or cached['body']['admitted_at'] > now:
+                raise PermissionError('cached receipt invalid or future-dated')
+            return cached
+        receipt_body = dict(schema=RECEIPT_SCHEMA,packet_id=body['packet_id'],
             packet_sha256=commitment('phageledger.packet.v1',body),evidence_event=body['evidence_event'],
             policy_sha256=body['policy_sha256'],destination=destination.principal_id,
             status='ACCEPTED_FIXTURE_METADATA',authority='NONE',admitted_at=now)
@@ -108,8 +126,46 @@ def admit(store, packet, source, destination, *, now):
         return receipt
 
 
-def verify_receipt(receipt, destination):
-    if type(receipt) is not dict or set(receipt) != {'body','mac'}:
-        raise ValueError('invalid receipt')
-    return (type(receipt['mac']) is str and receipt['body'].get('destination') == destination.principal_id
-            and hmac.compare_digest(receipt['mac'],_mac(destination.key,receipt['body'])))
+def verify_receipt(receipt, destination, *, packet=None):
+    """Check a strict v1 receipt and optionally bind it to an expected packet.
+
+    Without packet this verifies shape and MAC only, not correspondence to
+    a particular request or current authorization. No key registration or
+    consent verification occurs here; admit handles current store policy.
+    """
+    try:
+        if type(destination) is not LocalIdentity:
+            return False
+        canonical(receipt)
+        if type(receipt) is not dict or set(receipt) != {'body','mac'}:
+            return False
+        body, mac = receipt['body'], receipt['mac']
+        if type(body) is not dict or set(body) != RECEIPT_FIELDS or not _is_digest(mac):
+            return False
+        if (body['schema'] != RECEIPT_SCHEMA or body['status'] != 'ACCEPTED_FIXTURE_METADATA'
+                or body['authority'] != 'NONE' or body['destination'] != destination.principal_id
+                or not _is_digest(body['packet_sha256']) or not _is_digest(body['policy_sha256'])):
+            return False
+        fixture_id(body['packet_id']); fixture_id(body['evidence_event'])
+        fixture_id(body['destination']); _epoch(body['admitted_at'])
+        if not hmac.compare_digest(mac,_mac(destination.key,body)):
+            return False
+        if packet is not None:
+            canonical(packet)
+            if type(packet) is not dict or set(packet) != {'body','mac'}:
+                return False
+            original = packet['body']
+            if (type(original) is not dict or set(original) != FIELDS
+                    or original['schema'] != PACKET_SCHEMA or original['synthetic'] is not True
+                    or original['authority'] != 'NONE' or not _is_digest(packet['mac'])):
+                return False
+            _epoch(original['not_before']); _epoch(original['expires_at'])
+            if not 0 < original['expires_at']-original['not_before'] <= 3600:
+                return False
+            return (body['packet_sha256'] == commitment('phageledger.packet.v1',original)
+                    and all(body[k] == original[k] for k in
+                            ('packet_id','evidence_event','policy_sha256','destination'))
+                    and original['not_before'] <= body['admitted_at'] < original['expires_at'])
+        return True
+    except (ValueError, TypeError, AttributeError):
+        return False
