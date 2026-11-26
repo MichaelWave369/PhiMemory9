@@ -1,0 +1,28 @@
+test_algebraic_oracle_exhaustive (test_genomememory_audit_r1.AuditR1Tests.test_algebraic_oracle_exhaustive) ... ok
+test_no_fit_from_heldout_answers (test_genomememory_audit_r1.AuditR1Tests.test_no_fit_from_heldout_answers) ... ok
+test_receipt_substitution_never_grants_authority (test_genomememory_audit_r1.AuditR1Tests.test_receipt_substitution_never_grants_authority) ... ok
+test_reject_audit_depending_on_heldout_transitively (test_genomememory_audit_r1.AuditR1Tests.test_reject_audit_depending_on_heldout_transitively) ... FAIL
+test_reject_train_depending_on_heldout (test_genomememory_audit_r1.AuditR1Tests.test_reject_train_depending_on_heldout) ... FAIL
+
+======================================================================
+FAIL: test_reject_audit_depending_on_heldout_transitively (test_genomememory_audit_r1.AuditR1Tests.test_reject_audit_depending_on_heldout_transitively)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/ba6cac0ea124/repos/PhiMemory9/tests/test_genomememory_audit_r1.py", line 38, in test_reject_audit_depending_on_heldout_transitively
+    with self.assertRaisesRegex(ValueError, 'cross-split'):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_reject_train_depending_on_heldout (test_genomememory_audit_r1.AuditR1Tests.test_reject_train_depending_on_heldout)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/ba6cac0ea124/repos/PhiMemory9/tests/test_genomememory_audit_r1.py", line 30, in test_reject_train_depending_on_heldout
+    with self.assertRaisesRegex(ValueError, 'cross-split'):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.367s
+
+FAILED (failures=2)
