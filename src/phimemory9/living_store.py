@@ -197,11 +197,11 @@ class LivingStore:
 
     def upgrade_fixture(self):
         """Only the marked fixture can migrate v1 -> v2; no external DB import."""
-        self.authenticate(self.operator)
-        version = self._meta('version')
-        if version == '2': return
-        if version != '1': raise ValueError('unsupported migration')
         with self.engine.transaction():
+            self.authenticate(self.operator)
+            version = self._meta('version')
+            if version == '2': return
+            if version != '1': raise ValueError('unsupported migration')
             self.db.execute('''CREATE TABLE lm_obligations (
                 obligation_id TEXT PRIMARY KEY, opaque_gene TEXT NOT NULL,
                 kind TEXT NOT NULL, status TEXT NOT NULL)''')
@@ -253,9 +253,9 @@ class LivingStore:
         canonical(meaning)
         preview([metadata], metadata['project'], [], limit=0)
         parents = sorted(_labels(parents))
-        if len(self.db.execute('SELECT gene_id FROM lm_genes').fetchall()) >= 256:
-            raise ValueError('fixture gene budget')
         with self.engine.transaction():
+            if self.db.execute('SELECT count(*) FROM lm_genes').fetchone()[0] >= 256:
+                raise ValueError('fixture gene budget')
             if self.block_action(gid): raise PermissionError('withdrawn identity cannot reenter')
             if self._source_blocked(asdict(token)):
                 raise PermissionError('forgotten native source cannot reenter')
@@ -294,15 +294,15 @@ class LivingStore:
         if type(chromosome) is not MemoryChromosome: raise ValueError('typed chromosome required')
         candidate = asdict(chromosome)
         candidate['gene_ids'] = list(candidate['gene_ids'])
-        genes, groups = self.catalog()
-        # Unassigned genes get temporary validation-only groups, never persisted.
-        claimed = {g for c in groups+[candidate] for g in c['gene_ids']}
-        tmp = [dict(chromosome_id='fixture:unassigned:'+str(i), project=g['project'],
-                    parent_id=None, gene_ids=[g['gene_id']])
-               for i,g in enumerate(genes) if g['gene_id'] not in claimed]
-        chromosome_preview(genes, groups+[candidate]+tmp, chromosome.chromosome_id,
-                            chromosome.project, [], limit=0)
         with self.engine.transaction():
+            genes, groups = self.catalog()
+            # Unassigned genes get temporary validation-only groups, never persisted.
+            claimed = {g for c in groups+[candidate] for g in c['gene_ids']}
+            tmp = [dict(chromosome_id='fixture:unassigned:'+str(i), project=g['project'],
+                        parent_id=None, gene_ids=[g['gene_id']])
+                   for i,g in enumerate(genes) if g['gene_id'] not in claimed]
+            chromosome_preview(genes, groups+[candidate]+tmp, chromosome.chromosome_id,
+                                chromosome.project, [], limit=0)
             self.db.execute('INSERT INTO lm_chromosomes VALUES (?,?,?)',
                 (chromosome.chromosome_id, chromosome.project, chromosome.parent_id))
             self.db.executemany('INSERT INTO lm_memberships VALUES (?,?)',
@@ -501,12 +501,13 @@ class LivingStore:
         if self._meta('version') != '2': raise ValueError('fixture migration to v2 required')
         if action not in {'correct','supersede','retire','revoke','forget'}:
             raise ValueError('unsupported repair action')
-        if action in {'correct','supersede'}:
-            row = self._gene(replacement)
-            if row['state'] != 'active' or replacement == target or self.block_action(replacement):
-                raise ValueError('fresh active replacement required')
-        elif replacement is not None: raise ValueError('unexpected replacement')
+        if action not in {'correct','supersede'} and replacement is not None:
+            raise ValueError('unexpected replacement')
         with self.engine.transaction():
+            if action in {'correct','supersede'}:
+                row = self._gene(replacement)
+                if row['state'] != 'active' or replacement == target or self.block_action(replacement):
+                    raise ValueError('fresh active replacement required')
             original = self._gene(target)
             if original['state'] == 'deleted': raise ValueError('already deleted')
             affected = [r[0] for r in self.db.execute('''WITH RECURSIVE affected(gene_id) AS (
