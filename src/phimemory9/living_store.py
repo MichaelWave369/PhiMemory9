@@ -434,7 +434,14 @@ class LivingStore:
                 action = self.block_action(row['gene_id'])
                 if action == 'forget': self._scrub(row['gene_id'])
                 elif action:
-                    self.db.execute("UPDATE lm_genes SET state='held' WHERE gene_id=?", (row['gene_id'],))
+                    # A guard block applies to every dependent; it cannot identify
+                    # the original repair target after a stale main-only restore.
+                    # Preserve a locally recorded matching terminal state, but
+                    # never manufacture one or relax the guard's denial.
+                    terminal = {'retire': 'retired', 'correct': 'superseded',
+                                'supersede': 'superseded'}.get(action)
+                    if terminal is None or row['state'] != terminal:
+                        self.db.execute("UPDATE lm_genes SET state='held' WHERE gene_id=?", (row['gene_id'],))
                 if action: self._ensure_obligations(row['gene_id'])
             self.db.execute('''UPDATE lm_consents SET withdrawn=1 WHERE consent_id IN
                                (SELECT consent_id FROM lm_guard.withdrawals)''')
