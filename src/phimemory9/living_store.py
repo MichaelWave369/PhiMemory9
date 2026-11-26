@@ -254,6 +254,8 @@ class LivingStore:
             raise ValueError('fixture gene budget')
         with self.engine.transaction():
             if self.block_action(gid): raise PermissionError('withdrawn identity cannot reenter')
+            if self._source_blocked(asdict(token)):
+                raise PermissionError('forgotten native source cannot reenter')
             parent_memories = []
             for parent in parents:
                 row = self._gene(parent)
@@ -389,8 +391,27 @@ class LivingStore:
                               (self.opaque(gid),)).fetchone()
         return row[0] if row else None
 
+    def _source_guard_id(self, source):
+        # Token ID and revision are deliberately excluded: a new local token
+        # or newer revision must not silently reactivate the same native row.
+        identity = [source[k] for k in ('source_system', 'source_instance', 'native_id')]
+        return self.opaque('living-memory.source-forget.v1\0'+_json(identity))
+
+    def _source_blocked(self, source):
+        return self.db.execute('SELECT 1 FROM lm_guard.blocks WHERE opaque_id=?',
+                               (self._source_guard_id(source),)).fetchone() is not None
+
     def _scrub(self, gid):
         row = self._gene(gid)
+        # Preserve a keyed, store-scoped reimport guard before scrubbing source
+        # metadata. This shares the existing atomic main/guard transaction.
+        if row['token_id']:
+            source = self.db.execute('SELECT source_json FROM lm_tokens WHERE token_id=?',
+                                     (row['token_id'],)).fetchone()
+            if source is None:
+                raise ValueError('missing source token during forget')
+            self.db.execute('INSERT OR IGNORE INTO lm_guard.blocks VALUES (?,?)',
+                            (self._source_guard_id(json.loads(source[0])), 'forget'))
         marker = '[deleted synthetic fixture '+row['memory_id']+']'
         self.db.execute('UPDATE memories SET content=?,fingerprint=?,source_ref=NULL,status=? WHERE id=?',
                         (marker,_digest(marker),'retired',row['memory_id']))
