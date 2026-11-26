@@ -413,20 +413,35 @@ class LivingStore:
             self.db.execute('INSERT OR IGNORE INTO lm_guard.blocks VALUES (?,?)',
                             (self._source_guard_id(json.loads(source[0])), 'forget'))
         marker = '[deleted synthetic fixture '+row['memory_id']+']'
-        self.db.execute('UPDATE memories SET content=?,fingerprint=?,source_ref=NULL,status=? WHERE id=?',
-                        (marker,_digest(marker),'retired',row['memory_id']))
-        self.db.execute('UPDATE memories SET parent_memory_id=NULL WHERE id=? OR parent_memory_id=?',
-                        (row['memory_id'],row['memory_id']))
-        self.db.execute('DELETE FROM events WHERE memory_id=?', (row['memory_id'],))
-        self.engine._event(row['memory_id'],'DEATH',reason='fixture logical deletion')
+        mid = row['memory_id']
+        fingerprint = _digest(marker)
+        memory = self.engine.memory(mid)
+        marker_matches = (memory['content'] == marker and memory['fingerprint'] == fingerprint
+                          and memory['source_ref'] is None and memory['status'] == 'retired')
+        events = self.engine.events(mid)
+        # A tombstone is not sufficient evidence that all cleanup is complete.
+        # Preserve the existing deletion event only if its marker and sole
+        # event already match. Continue sweeping all dependent artifacts.
+        event_matches = (len(events) == 1 and events[0]['stage'] == 'DEATH'
+                         and events[0]['detail'] == {'reason': 'fixture logical deletion'})
+        if not marker_matches:
+            self.db.execute('UPDATE memories SET content=?,fingerprint=?,source_ref=NULL,status=? WHERE id=?',
+                            (marker,fingerprint,'retired',mid))
+        self.db.execute('''UPDATE memories SET parent_memory_id=NULL
+            WHERE (id=? AND parent_memory_id IS NOT NULL) OR parent_memory_id=?''', (mid,mid))
+        if not (marker_matches and event_matches):
+            self.db.execute('DELETE FROM events WHERE memory_id=?', (mid,))
+            self.engine._event(mid,'DEATH',reason='fixture logical deletion')
         self.db.execute('DELETE FROM lm_copies WHERE gene_id=?', (gid,))
         self.db.execute('DELETE FROM lm_consents WHERE gene_id=?', (gid,))
         if self._meta('version') == '2':
             self.db.execute('DELETE FROM lm_observations WHERE gene_id=?', (gid,))
         self.db.execute('DELETE FROM lm_memberships WHERE gene_id=?', (gid,))
         self.db.execute('DELETE FROM lm_lineage WHERE child_id=? OR parent_id=?', (gid,gid))
-        self.db.execute('UPDATE lm_genes SET token_id=NULL,metadata_json=?,state=? WHERE gene_id=?',
-                        (_json({'gene_id':gid}), 'deleted', gid))
+        metadata = _json({'gene_id':gid})
+        if row['token_id'] is not None or row['metadata_json'] != metadata or row['state'] != 'deleted':
+            self.db.execute('UPDATE lm_genes SET token_id=NULL,metadata_json=?,state=? WHERE gene_id=?',
+                            (metadata, 'deleted', gid))
         if row['token_id']:
             self.db.execute('''DELETE FROM lm_tokens WHERE token_id=? AND NOT EXISTS
                 (SELECT 1 FROM lm_genes WHERE token_id=?)''', (row['token_id'],row['token_id']))
@@ -461,10 +476,10 @@ class LivingStore:
                     # never manufacture one or relax the guard's denial.
                     terminal = {'retire': 'retired', 'correct': 'superseded',
                                 'supersede': 'superseded'}.get(action)
-                    if terminal is None or row['state'] != terminal:
+                    if row['state'] != 'held' and (terminal is None or row['state'] != terminal):
                         self.db.execute("UPDATE lm_genes SET state='held' WHERE gene_id=?", (row['gene_id'],))
                 if action: self._ensure_obligations(row['gene_id'])
-            self.db.execute('''UPDATE lm_consents SET withdrawn=1 WHERE consent_id IN
+            self.db.execute('''UPDATE lm_consents SET withdrawn=1 WHERE withdrawn!=1 AND consent_id IN
                                (SELECT consent_id FROM lm_guard.withdrawals)''')
 
     def _ensure_obligations(self, gid):
