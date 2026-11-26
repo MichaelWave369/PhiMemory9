@@ -1,0 +1,28 @@
+{
+  "memoria": {
+    "adapter_source": {
+      "file": "genomememory_export.py",
+      "sha256": "558ef55430eab274baceaced0e3e187182f73eabd95d3578d2d70790a61a6ef5"
+    },
+    "denied_without_permission": true,
+    "eligible_count": 0,
+    "executed": true,
+    "held_count": 1,
+    "native_id": 1,
+    "source_revision": "9c480fcaea467615252d347956eac42ff038edf7"
+  },
+  "sml": {
+    "collab_state": "shared_verified",
+    "eligible_count": 0,
+    "executed": true,
+    "held_count": 1,
+    "native_id": "fixture:sml-native",
+    "packet_source": {
+      "file": "sml_packets.py",
+      "sha256": "053361730827bbd060de0769fb8b88a52f90cd88fc158e1579e3a53081dfa3fa"
+    },
+    "scores_promoted": false,
+    "source_revision": "43f7513c46529167d842a7c195029b03574dc393",
+    "state": "active"
+  }
+}
