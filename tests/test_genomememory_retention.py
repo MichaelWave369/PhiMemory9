@@ -63,7 +63,7 @@ class RetentionTests(unittest.TestCase):
         ids = {o["node_id"] for o in r["obligations"]}
         self.assertNotIn("fixture:root", ids)
         self.assertNotIn("fixture:other", ids)
-        self.assertEqual(len(ids), 6)
+        self.assertEqual(len(ids), 7)
 
     def test_coverage_gaps_never_imply_erasure(self):
         source = fixture()
