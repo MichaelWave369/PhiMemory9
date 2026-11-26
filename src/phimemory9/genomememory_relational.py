@@ -16,7 +16,7 @@ def experiment(inventory, observations, *, hold_target=None):
     Hold target is a synthetic revocation-plan target, not a real permission.
     No persistent state, execution, real-memory access or authorization.
     """
-    state, nodes, _ = _validated(inventory)
+    state, nodes, ordered = _validated(inventory)
     if not isinstance(observations, (list, tuple)) or not 1 <= len(observations) <= 31:
         raise ValueError("invalid observation count")
     rows, ids, inputs = [], set(), set()
@@ -38,6 +38,18 @@ def experiment(inventory, observations, *, hold_target=None):
         inputs.add(x)
         rows.append(dict(row))
     rows.sort(key=lambda r: r["node_id"])
+    # Split labels alone do not isolate evidence. Reject direct and transitive
+    # ancestry between observations in different splits, before any hold can
+    # hide that leakage. A common unobserved root is not proof of independence.
+    split_by_id = {r["node_id"]: r["split"] for r in rows}
+    ancestors = {}
+    for nid in ordered:
+        parents = set(nodes[nid]["depends_on"])
+        ancestors[nid] = parents | set().union(*(ancestors[p] for p in parents))
+        if nid in split_by_id and any(
+                p in split_by_id and split_by_id[p] != split_by_id[nid]
+                for p in ancestors[nid]):
+            raise ValueError("cross-split observation ancestry")
     hold = plan(inventory, hold_target, "revoke") if hold_target is not None else None
     blocked = {o["node_id"] for o in hold["obligations"]} if hold else set()
     admitted = {split: [r for r in rows if r["split"] == split and r["node_id"] not in blocked]
