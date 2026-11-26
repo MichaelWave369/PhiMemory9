@@ -213,7 +213,7 @@ class LivingStore:
 
     def set_policy(self, revision, *, privacy=('public',)):
         self.authenticate(self.operator)
-        if type(revision) is not int or revision <= int(self._guard('policy_revision')):
+        if type(revision) is not int:
             raise ValueError('policy revision must increase')
         privacy = sorted(_labels(privacy))
         if not privacy or set(privacy)-{'public','personal','private','sensitive'}:
@@ -222,6 +222,9 @@ class LivingStore:
                     authority='FIXTURE_ONLY', max_consent_ttl=3600)
         digest = commitment('living-memory.policy.v1', body)
         with self.engine.transaction():
+            self.authenticate(self.operator)
+            if revision <= int(self._guard('policy_revision')):
+                raise ValueError('policy revision must increase')
             self.db.execute("UPDATE lm_guard.meta SET value=? WHERE key='policy_revision'", (str(revision),))
             self.db.execute("UPDATE lm_guard.meta SET value=? WHERE key='policy_json'", (_json(body),))
         return digest
@@ -323,6 +326,8 @@ class LivingStore:
         if operation == 'transfer' and scope['destination'] is None:
             raise ValueError('explicit destination required for transfer')
         with self.engine.transaction():
+            self.authenticate(self.operator)
+            self.authenticate(identity)
             row = self._gene(gid)
             if row['state'] != 'active' or self.block_action(gid): raise PermissionError('held gene')
             metadata = json.loads(row['metadata_json'])
@@ -371,6 +376,7 @@ class LivingStore:
         if len(ids) > 9: raise ValueError('expression budget exceeded')
         admitted, held = [], []
         with self.engine.transaction():
+            self.authenticate(identity)
             for gid in ids:
                 reason = self._reason(gid,identity.principal_id,scope,operation,now,expected_policy)
                 (held if reason else admitted).append((gid,reason) if reason else gid)
