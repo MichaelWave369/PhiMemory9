@@ -39,6 +39,8 @@ def pack(store, ids, source, destination, context, *, now, expires_at, expected_
     if context.destination != destination.principal_id:
         raise PermissionError('explicit destination mismatch')
     with store.engine.transaction():
+        store.authenticate(source)
+        store.authenticate(destination)
         event = store.evaluate(ids,source,context,'transfer',now=now,expected_policy=expected_policy)
         if not event.admitted_ids or event.held:
             raise PermissionError('all payload references require current transfer consent')
@@ -87,6 +89,8 @@ def admit(store, packet, source, destination, *, now):
     if type(ids) is not list or not 1 <= len(ids) <= 9 or not all(type(gid) is str for gid in ids) or ids != sorted(set(ids)):
         raise ValueError('invalid payload references')
     with store.engine.transaction():
+        store.authenticate(source)
+        store.authenticate(destination)
         if any(store._reason(gid,source.principal_id,scope,'transfer',now,body['policy_sha256'])
                for gid in ids):
             raise PermissionError('current policy, scope or consent denied')
