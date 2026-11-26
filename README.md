@@ -1,5 +1,11 @@
 # ΦMemory9
 
+Operation Living Memory now has a [persistent synthetic v1 proof loop](docs/LIVING_MEMORY_V1.md):
+versioned SQLite genes/chromosomes, explicit consent, authenticated local packet
+review, durable withdrawal/replay guards and revisable finite learning. Native
+fixture checks cover Memoria, SML packets, XiPhiOmega, PhiGenesis and a PhiOS
+advisory surface. Production integration remains HELD; real stores are not migrated.
+
 **ΦPMA-9 | Recursive Altermath Memory** is an experimental, local-first, event-sourced memory engine. It models nine *operations*, not biological or metaphysical claims:
 
 1. **ENTER** — ingest content with provenance.

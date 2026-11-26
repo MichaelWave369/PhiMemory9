@@ -1,0 +1,14 @@
+{
+  "affected_count": 3,
+  "after_withdrawal_rule": null,
+  "after_withdrawal_status": "UNDERDETERMINED",
+  "heldout_correct": 2,
+  "heldout_count": 2,
+  "learning_rule": [
+    7,
+    4
+  ],
+  "packet_held_after_withdrawal": true,
+  "physical_erasure_verified": false,
+  "unknown_external_obligations": 12
+}

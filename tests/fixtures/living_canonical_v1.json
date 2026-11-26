@@ -1,0 +1,46 @@
+[
+  {
+    "id": 0,
+    "value": {
+      "root_id": "fixture:root",
+      "project": "demo",
+      "context_tags": [
+        "research"
+      ],
+      "limit": 3
+    },
+    "canonical": "{\"context_tags\":[\"research\"],\"limit\":3,\"project\":\"demo\",\"root_id\":\"fixture:root\"}",
+    "sha256": "8bd53a8263f1b512acaf65a04bd9653499d7b9c34430a1a509a5bcf17be59d56"
+  },
+  {
+    "id": 1,
+    "value": {
+      "genes": [
+        "fixture:a"
+      ],
+      "memberships": [
+        [
+          "root",
+          "fixture:a"
+        ],
+        [
+          "child",
+          "fixture:a"
+        ]
+      ]
+    },
+    "canonical": "{\"genes\":[\"fixture:a\"],\"memberships\":[[\"root\",\"fixture:a\"],[\"child\",\"fixture:a\"]]}",
+    "sha256": "4462befef365e4ad568bf6ac29aea77d713918eae045182b19a6743afe723709"
+  },
+  {
+    "id": 2,
+    "value": {
+      "n": 9007199254740991,
+      "text": "quote \" slash \\",
+      "missing": null,
+      "active": true
+    },
+    "canonical": "{\"active\":true,\"missing\":null,\"n\":9007199254740991,\"text\":\"quote \\\" slash \\\\\"}",
+    "sha256": "88690b2623637acdd70b3ed77744252d6915bbfb70433061a7556e294ea9afcf"
+  }
+]

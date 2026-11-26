@@ -1,0 +1,105 @@
+{
+  "benchmark": {
+    "audit_answer_comparisons": {
+      "cold": 54,
+      "memory": 108,
+      "simple": 54
+    },
+    "authority": "NONE",
+    "correct": {
+      "cold_enumeration": 54,
+      "memory": 54,
+      "simple_inverse": 54
+    },
+    "counts": {
+      "cold_hypothesis_row_checks_upper_bound": 75330,
+      "cold_train_audit_acquisitions": 135,
+      "distinct_heldout_pairs": 18,
+      "initial_unique_evaluation_answers": 18,
+      "memory_governance_checks": 189,
+      "memory_hypothesis_row_checks_upper_bound": 150660,
+      "memory_observation_rows_loaded": 189,
+      "memory_sql_statements": 1728,
+      "memory_train_audit_acquisitions": 45,
+      "naive_negative_transfer_wrong": 18,
+      "native_phi007_agreements": 27,
+      "native_phi007_validation_observations": 81,
+      "negative_control_hypothesis_row_checks_upper_bound": 25110,
+      "negative_transfer_abstentions": 9,
+      "persistent_fixture_bytes": 1880064,
+      "predictions_per_method": 54,
+      "relations": 9,
+      "repeats": 3,
+      "simple_modular_inversions": 27,
+      "simple_train_audit_acquisitions": 135
+    },
+    "heldout_scoring_comparisons": {
+      "cold": 54,
+      "memory": 108,
+      "simple": 54
+    },
+    "limitations": [
+      "No real-world dataset or general intelligence claim.",
+      "Both complete validation and admitted fitting costs are charged for memory.",
+      "Hypothesis row counts are upper bounds, not hardware instruction counts.",
+      "Setup and native-oracle wall time are reported separately from prediction-method wall time.",
+      "Persistent bytes include SQLite/guard overhead; baseline source storage is not measured.",
+      "Source-acquisition savings reflect repeated-context reuse; simple inverse is computationally much cheaper."
+    ],
+    "observed_wall_time_ns": {
+      "cold_ns": 11863740,
+      "memory_ns": 116986377,
+      "memory_setup_ns": 950791512,
+      "native_oracle_ns": 128934,
+      "simple_ns": 147809
+    },
+    "schema": "genomememory-learning-benchmark/v1",
+    "scope": "Authored finite affine family; repeated predictions are not independent replications.",
+    "setup_cost": "Each memory method acquires five train/audit observations per relation; included above.",
+    "simple_training_consistency_checks": 81,
+    "source_acquisition_unit": "One synthetic teacher response under a cold-acquisition or reuse budget; not measured external acquisition time.",
+    "synthetic": true
+  },
+  "checks": {
+    "consent": true,
+    "integrity": true,
+    "learning": true,
+    "native_export": true,
+    "packet_review": true,
+    "representation": true,
+    "restart": true,
+    "revocation": true,
+    "source_creation": true
+  },
+  "exports": {
+    "memoria": {
+      "adapter_source": {
+        "file": "genomememory_export.py",
+        "sha256": "558ef55430eab274baceaced0e3e187182f73eabd95d3578d2d70790a61a6ef5"
+      },
+      "denied_without_permission": true,
+      "eligible_count": 0,
+      "executed": true,
+      "held_count": 1,
+      "native_id": 1,
+      "source_revision": "9c480fcaea467615252d347956eac42ff038edf7"
+    },
+    "sml": {
+      "collab_state": "shared_verified",
+      "eligible_count": 0,
+      "executed": true,
+      "held_count": 1,
+      "native_id": "fixture:sml-native",
+      "packet_source": {
+        "file": "sml_packets.py",
+        "sha256": "053361730827bbd060de0769fb8b88a52f90cd88fc158e1579e3a53081dfa3fa"
+      },
+      "scores_promoted": false,
+      "source_revision": "43f7513c46529167d842a7c195029b03574dc393",
+      "state": "active"
+    }
+  },
+  "native_phi007": true,
+  "native_sml": true,
+  "native_xpo": true
+}
