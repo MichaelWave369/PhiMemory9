@@ -17,6 +17,14 @@ def observe(store, gid, split, x, y):
 
 
 def learn(store, identity, context, *, now, expected_policy):
+    # Use one serialized snapshot for observations, lineage, admission and
+    # fitting. Nested evaluate uses the existing transaction savepoint.
+    with store.engine.transaction():
+        store.authenticate(identity)
+        return _learn_locked(store, identity, context, now=now, expected_policy=expected_policy)
+
+
+def _learn_locked(store, identity, context, *, now, expected_policy):
     rows = [dict(node_id=r['gene_id'],split=r['split'],x=r['x'],y=r['y'])
             for r in store.db.execute('SELECT * FROM lm_observations ORDER BY gene_id')]
     if not rows:
