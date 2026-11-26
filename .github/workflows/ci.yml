@@ -77,6 +77,11 @@ jobs:
           repository: MichaelWave369/PhiOS
           ref: 0eb88a0ab58d51b54962457cdb510f603827bc88
           path: native/PhiOS
+      - uses: actions/checkout@v4
+        with:
+          repository: MichaelWave369/NBGPocketMesh
+          ref: 0687f10970989194d4af554d9b189c7ce8a1ad15
+          path: native/NBGPocketMesh
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
@@ -84,6 +89,10 @@ jobs:
         with:
           node-version: '20'
       - run: python -m pip install -e . 'cryptography>=43'
+      - name: Native continuity anchor fixture
+        env:
+          LIVING_NATIVE_POCKETMESH: ${{ github.workspace }}/native/NBGPocketMesh
+        run: python -m unittest discover -s tests -p 'test_living_continuity_r10.py' -v
       - name: Native disposable-source proof loop
         run: >-
           python -m phimemory9.living_demo --output "$RUNNER_TEMP/living-native"
